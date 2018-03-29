@@ -1,19 +1,19 @@
 package tempcontroller
 
 import (
-	"fmt"
 	"os"
 	"time"
 
-	"github.com/stianeikeland/go-rpio"
 	"os/signal"
 	"syscall"
+
+	"github.com/stianeikeland/go-rpio"
 )
 
 type RelayController struct {
-	Name       string
-	relay	Relay
-	sensor TempSensor
+	Name         string
+	relay        Relay
+	sensor       TempSensor
 	updatePeriod time.Duration
 }
 
@@ -22,12 +22,11 @@ var (
 	pin = rpio.Pin(10)
 )
 
-func NewRelayController(name string, relay Relay, ts TempSensor)
-{
+func NewRelayController(name string, relay Relay, ts TempSensor) *RelayController {
 	rc := new(RelayController)
 	rc.Name = name
-	rc.Relay = relay
-	rc.TempSensor = ts
+	rc.relay = relay
+	rc.sensor = ts
 	rc.updatePeriod = time.Second * 10
 	return rc
 }
@@ -46,14 +45,13 @@ func (rc RelayController) Run() {
 			break
 
 		case <-ticker:
-			if rc.sensor.triggerOnValue(){
+			if rc.sensor.TriggerOn() {
 				rc.relay.TurnOn()
 			}
-			if rc.sensor.triggerOffValue(){
+			if rc.sensor.TriggerOff() {
 				rc.relay.TurnOff()
 			}
 			break
 		}
 	}
 }
-

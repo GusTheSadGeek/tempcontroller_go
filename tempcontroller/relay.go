@@ -12,7 +12,7 @@ type Relay struct {
 	Pin  int    `yaml:"relaypin"`
 }
 
-func NewRelay(name string, pin int) {
+func NewRelay(name string, pin int) *Relay{
 	r := new(Relay)
 	r.Name = name
 	r.Pin = pin
@@ -21,10 +21,12 @@ func NewRelay(name string, pin int) {
 
 func (s *Relay) TurnOn() error {
 	fmt.Println("ON")
+	return nil
 }
 
 func (s *Relay) TurnOff() error {
 	fmt.Println("OFF")
+	return nil
 }
 
 
