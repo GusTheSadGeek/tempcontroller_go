@@ -4,31 +4,41 @@ import (
 	"os"
 	"time"
 
+	"fmt"
 	"os/signal"
 	"syscall"
-
-	"github.com/stianeikeland/go-rpio"
 )
 
 type RelayController struct {
 	Name         string
-	relay        Relay
-	sensor       TempSensor
+	relay        *Relay
+	sensor       *TempSensor
 	updatePeriod time.Duration
 }
 
-var (
-	// Use mcu pin 10, corresponds to physical pin 19 on the pi
-	pin = rpio.Pin(10)
-)
-
-func NewRelayController(name string, relay Relay, ts TempSensor) *RelayController {
+func NewRelayController(name string, relay *Relay, ts *TempSensor) *RelayController {
 	rc := new(RelayController)
 	rc.Name = name
 	rc.relay = relay
 	rc.sensor = ts
-	rc.updatePeriod = time.Second * 10
+	rc.updatePeriod = time.Second * 60
 	return rc
+}
+
+func log(temp float64, relay int) {
+	tm := time.Now().UTC().Format("2006-01-02T15:04:05.000000000Z07:00")
+	line := fmt.Sprintf("time:%s\ttemp:%v\trelay:%v\n", tm, temp, relay)
+
+	// If the file doesn't exist, create it, or append to the file
+	f, err := os.OpenFile("/var/log/temps/temp.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Printf("%v",err)
+	}
+	defer f.Close()
+
+	if _, err := f.Write([]byte(line)); err != nil {
+		fmt.Printf("%v",err)
+	}
 }
 
 func (rc RelayController) Run() {
@@ -47,9 +57,12 @@ func (rc RelayController) Run() {
 		case <-ticker:
 			if rc.sensor.TriggerOn() {
 				rc.relay.TurnOn()
+				log(rc.sensor.Current(), rc.relay.State())
 			}
+
 			if rc.sensor.TriggerOff() {
 				rc.relay.TurnOff()
+				log(rc.sensor.Current(), rc.relay.State())
 			}
 			break
 		}

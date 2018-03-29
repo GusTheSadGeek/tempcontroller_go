@@ -8,21 +8,29 @@ Connect a LED with resistor from pin 19 to ground.
 */
 
 import (
-	"github.com/GusTheSadGeek/tempcontroller_go/tempcontroller"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/GusTheSadGeek/tempcontroller_go/tempcontroller"
 )
 
 func main() {
+	tempcontroller.RelayInit()
+	defer tempcontroller.RelayClose()
 
-	ts := tempcontroller.NewTempSensor("Test", "/tmp/wibble")
-	ts.SetUpdatePeriod(1)
+	ts := tempcontroller.NewTempSensor("Temp1", "/sys/bus/w1/devices/28-041501b016ff/w1_slave")
+	ts.SetUpdatePeriod(60)
+	ts.SetTriggerValues(23.5,24.5)
+
+	relay := tempcontroller.NewRelay("Relay1", 33)
+
 	go ts.Run()
-
+	controller := tempcontroller.NewRelayController("Name", relay, ts)
+	go controller.Run()
 
 	var gracefulStop = make(chan os.Signal)
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)
-	<- gracefulStop
+	<-gracefulStop
 }

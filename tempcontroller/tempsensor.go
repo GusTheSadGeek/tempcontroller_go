@@ -29,6 +29,7 @@ func NewTempSensor(name string, path string) *TempSensor {
 	ts.updatePeriod = time.Second * 1
 	ts.triggerOnValue = 0
 	ts.triggerOffValue = 0
+	ts.readTemp()
 	return ts
 }
 
@@ -38,6 +39,11 @@ func (s *TempSensor) Current() float64 {
 
 func (s *TempSensor) SetUpdatePeriod(period time.Duration) {
 	s.updatePeriod = time.Second * period
+}
+
+func (s *TempSensor) SetTriggerValues(on, off float64) {
+	s.triggerOnValue = on
+	s.triggerOffValue = off
 }
 
 func (s *TempSensor) TriggerOn() bool {
@@ -55,6 +61,11 @@ func (s *TempSensor) TriggerOff() bool {
 		return s.currentValue > s.triggerOffValue
 	}
 }
+
+
+// expect file content
+//76 01 55 00 7f ff 0c 10 ee : crc=ee YES
+//76 01 55 00 7f ff 0c 10 ee t=23375
 
 // readLines reads a whole file into memory
 // and returns a slice of its lines.
@@ -101,7 +112,7 @@ func (s *TempSensor) readTemp() error {
 	return nil
 }
 
-func (s TempSensor) Run() {
+func (s *TempSensor) Run() {
 
 	var gracefulStop = make(chan os.Signal)
 	signal.Notify(gracefulStop, syscall.SIGTERM)
